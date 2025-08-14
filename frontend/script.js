@@ -10,8 +10,10 @@ import { Manutencao } from './Manutencao.js';
 import { mostrarFeedback } from './funcoesAuxiliares.js';
 
 const backendLocalUrl = 'http://localhost:3001';
-const backendRenderUrl = ''; // Coloque aqui sua URL pública do Render quando tiver
-const backendUrl = backendLocalUrl;
+// IMPORTANTE: Insira seu link público REAL do Render aqui.
+const backendRenderUrl = 'https://minha-garagem-online.onrender.com'; // <--- COLOQUE SEU LINK DO RENDER AQUI
+// AGORA VAMOS USAR O LINK DO RENDER PARA AS CHAMADAS ONLINE
+const backendUrl = backendRenderUrl; 
 
 console.log(`[FRONTEND] O script será executado com o backend em: ${backendUrl}`);
 
@@ -229,8 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const dadosParaBackend = {
             tipo: tipo,
             modelo: formData.get('modelo'),
-            marca: formData.get('marca'),
-            ano: Number(formData.get('ano')),
+            marca: formData.get('marca') || formData.get('modelo').split(' ')[0],
+            ano: Number(formData.get('ano')) || new Date().getFullYear(),
             cor: formData.get('cor'),
             placa: (tipo === 'bicicleta') 
                 ? `BIKE-${Math.random().toString(36).substring(2, 9).toUpperCase()}` 
@@ -265,3 +267,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+/** Funções que não precisam estar dentro do 'DOMContentLoaded' */
+function salvarGaragem() {
+    const dadosParaSalvar = Object.values(veiculosInstanciados).map(v => v.toJSON());
+    localStorage.setItem('garagemInteligente', JSON.stringify(dadosParaSalvar));
+}
+window.salvarGaragem = salvarGaragem;
