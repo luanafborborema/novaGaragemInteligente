@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Garagem Inteligente Unificada</title>
+    <!-- Inclui o Bootstrap CSS para estilização base, garantindo um visual limpo e responsivo -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Link para o seu arquivo de estilos customizado. Garanta que 'style.css' está no lugar certo! -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <!-- Container principal da aplicação: utiliza classes do Bootstrap para largura e o Flexbox do CSS customizado para o layout da sidebar -->
+    <div id="app-container" class="container-fluid"> 
+        <!-- Barra Lateral de Navegação (Sidebar): Contém o menu principal da aplicação -->
+        <nav id="sidebar">
+            <h2>Garagem</h2>
+            <ul id="sidebar-menu" class="list-unstyled">
+                <!-- Item de menu para adicionar um novo veículo (ação controlada pelo JavaScript) -->
+                <li class="sidebar-action"><a href="#" data-action="mostrarFormAddVeiculo">➕ Adicionar Veículo</a></li>
+                <!-- Aqui é onde os links para cada veículo adicionado serão inseridos dinamicamente pelo JavaScript -->
+            </ul>
+        </nav>
+
+        <!-- Área de Conteúdo Principal: Exibe as informações detalhadas dos veículos, formulários, e resultados das APIs -->
+        <main id="main-content">
+            <!-- Div para mensagens de feedback ao usuário (sucesso, erro, info). Controlada pelo JavaScript -->
+            <div id="feedback-message" class="feedback" style="display: none;"></div>
+
+            <!-- Mensagem de Boas-vindas: Exibida inicialmente e escondida quando o usuário seleciona um veículo ou um formulário -->
+            <div id="welcome-message">
+                <h1>Bem-vinda à sua Garagem Inteligente!</h1>
+                <p>Use o menu à esquerda para adicionar um novo veículo ou ver detalhes dos veículos existentes.</p>
+            </div>
+
+            <!-- Formulário para Adicionar Novo Veículo: Inicia escondido e é exibido via JavaScript -->
+            <div id="add-veiculo-form-container" class="form-container" style="display: none;">
+                <h2>Adicionar Novo Veículo</h2>
+                <form id="add-veiculo-form" class="mb-4">
+                    <div class="mb-3">
+                        <label for="add-tipo" class="form-label">Tipo de Veículo:</label>
+                        <select id="add-tipo" name="tipo" class="form-select" required>
+                            <option value="" disabled selected>Selecione o tipo...</option>
+                            <option value="carro">Carro Casual</option>
+                            <option value="esportivo">Carro Esportivo</option>
+                            <option value="caminhao">Caminhão</option>
+                            <option value="moto">Moto</option>
+                            <option value="bicicleta">Bicicleta</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-modelo" class="form-label">Modelo:</label>
+                        <input type="text" id="add-modelo" name="modelo" class="form-control" placeholder="Ex: Fusca, CB 500, Tesla Cybertruck" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-marca" class="form-label">Marca:</label>
+                        <input type="text" id="add-marca" name="marca" class="form-control" placeholder="Ex: Volkswagen, Honda" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-ano" class="form-label">Ano:</label>
+                        <input type="number" id="add-ano" name="ano" class="form-control" placeholder="Ex: 2023" min="1900" max="2030" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-placa" class="form-label">Placa:</label>
+                        <input type="text" id="add-placa" name="placa" class="form-control" placeholder="Ex: ABC1234 (opcional, para veículos que usam placa)" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-cor" class="form-label">Cor:</label>
+                        <input type="text" id="add-cor" name="cor" class="form-control" placeholder="Ex: Azul Metálico, Vermelho" required />
+                    </div>
+                    <!-- Campo específico para Caminhão (capacidade de carga), que será mostrado/escondido pelo JavaScript -->
+                    <div id="add-caminhao-capacidade-group" class="mb-3" style="display: none;">
+                        <label for="add-capacidade" class="form-label">Capacidade Carga (kg):</label>
+                        <input type="number" id="add-capacidade" name="capacidade" class="form-control" placeholder="Ex: 5000" min="0" step="100" />
+                    </div>
+                    <button type="submit" class="btn btn-success me-2">Salvar Novo Veículo</button>
+                    <button type="button" id="cancel-add-veiculo" class="btn btn-secondary">Cancelar</button>
+                </form>
+            </div>
+
+            <!-- Formulário para EDITAR Veículo: Inicia escondido e é exibido via JavaScript (novo) -->
+            <div id="edit-veiculo-form-container" class="form-container" style="display: none;">
+                <h2>Editar Veículo <span id="edit-veiculo-modelo-title"></span></h2>
+                <form id="edit-veiculo-form" class="mb-4" data-id="">
+                    <input type="hidden" id="edit-veiculo-id" /> <!-- Para armazenar o _id do MongoDB -->
+                    <input type="hidden" id="edit-veiculo-placa-original" /> <!-- Para manter a placa original para validação -->
+                    <input type="hidden" id="edit-veiculo-tipo" /> <!-- Para saber qual instância do frontend atualizar -->
+
+                    <div class="mb-3">
+                        <label for="edit-modelo" class="form-label">Modelo:</label>
+                        <input type="text" id="edit-modelo" name="modelo" class="form-control" placeholder="Modelo do Veículo" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-placa" class="form-label">Placa:</label>
+                        <input type="text" id="edit-placa" name="placa" class="form-control" placeholder="Placa (ex: ABC1234)" required />
+                        <small class="form-text text-muted">A placa é obrigatória para a maioria dos veículos e deve ser única.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-cor" class="form-label">Cor:</label>
+                        <input type="text" id="edit-cor" name="cor" class="form-control" placeholder="Cor (ex: Vermelho)" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-marca" class="form-label">Marca:</label>
+                        <input type="text" id="edit-marca" name="marca" class="form-control" placeholder="Marca (ex: Chevrolet)" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-ano" class="form-label">Ano:</label>
+                        <input type="number" id="edit-ano" name="ano" class="form-control" min="1900" max="2026" required />
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary me-2">Salvar Alterações</button>
+                    <button type="button" id="cancel-edit-veiculo" class="btn btn-secondary">Cancelar</button>
+                </form>
+            </div>
+
+            <!-- ========================================================== -->
+            <!-- CONTAINERS INDIVIDUAIS DOS VEÍCULOS -->
+            <!-- Cada um desses blocos é um painel detalhado para um tipo específico de veículo. -->
+            <!-- Eles iniciam escondidos e são mostrados pelo JavaScript quando o veículo é selecionado. -->
+            <!-- ========================================================== -->
+
+            <!-- Carro Casual Container -->
+            <div id="carro-container" class="veiculo-container" style="display: none;">
+                <h2>🚗 Carro Casual</h2>
+                <img id="carro-img" src="imagens/carro.png" alt="Carro Casual" class="veiculo-img" />
+                <p><strong>Modelo:</strong> <span id="carro-modelo">Carro Padrão</span></p>
+                <p><strong>Marca:</strong> <span id="carro-marca">---</span></p>
+                <p><strong>Ano:</strong> <span id="carro-ano">---</span></p>
+                <p><strong>Placa:</strong> <span id="carro-placa">---</span></p>
+                <p><strong>Cor:</strong> <span id="carro-cor">Cinza</span></p>
+                <p><strong>Status:</strong> <span id="carro-status" class="status-desligado">Desligado</span></p>
+                <p><strong>Velocidade:</strong> <span id="carro-velocidade">0</span> km/h</p>
+                <!-- Seção de Botões de Ação para o veículo -->
+                <div class="actions mb-3">
+                    <button data-acao="ligar" data-tipo="carro" class="btn btn-sm btn-success">Ligar</button>
+                    <button data-acao="desligar" data-tipo="carro" class="btn btn-sm btn-danger">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="carro" class="btn btn-sm btn-info">Acelerar</button>
+                    <button data-acao="frear" data-tipo="carro" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="carro" class="btn btn-sm btn-secondary">Buzinar</button>
+                    <!-- NOVO: BOTÕES DE EDITAR E EXCLUIR -->
+                    <button data-acao="editar" data-tipo="carro" class="btn btn-sm btn-primary">Editar</button>
+                    <button data-acao="excluir" data-tipo="carro" class="btn btn-sm btn-danger">Excluir</button>
+                </div>
+                <!-- Seção de Integração com API: Previsão do Tempo (cada veículo pode ter a sua) -->
+                <div class="api-details-section mb-4">
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-carro">[Cidade]</span></h5>
+                    <div class="mb-2">
+                        <input type="text" id="cidade-previsao-input-carro" class="form-control form-control-sm" placeholder="Digite uma cidade..." />
+                    </div>
+                    <button id="verificar-clima-btn-carro" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="carro">Ver Previsão</button>
+                    <!-- Filtros para a previsão (Botões e Toggle para destacar chuva) -->
+                    <div class="filtros-previsao mt-2 mb-2">
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn active" data-veiculo-tipo="carro" data-dias="1">Hoje</button>
+                        <!-- Você pode adicionar mais botões de filtro de dias aqui, se o seu backend puder fornecer (ex: data-dias="3" para 3 dias, data-dias="5" para 5 dias) -->
+                    </div>
+                    <div class="form-check form-switch mt-2 mb-2">
+                        <input class="form-check-input toggle-destaque-chuva" type="checkbox" role="switch" id="destaque-chuva-carro" data-veiculo-tipo="carro" />
+                        <label class="form-check-label" for="destaque-chuva-carro">Destacar chuva</label>
+                    </div>
+                    <div id="previsao-tempo-resultado-carro" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
+                    </div>
+                </div>
+                <!-- Seção de Manutenção: Permite registrar e visualizar o histórico de serviços do veículo -->
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <form class="manutencao-form" data-tipo="carro">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="carro-manutencao-data" class="form-control mb-2" required />
+                        <input type="text" id="carro-manutencao-tipo" class="form-control mb-2" placeholder="Tipo de Serviço (Ex: Troca de Óleo)" required />
+                        <input type="number" id="carro-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required />
+                        <textarea id="carro-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
+                    </form>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="carro-historico-lista"><li>Nenhum registro.</li></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="carro-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carro Esportivo Container -->
+            <div id="esportivo-container" class="veiculo-container" style="display: none;">
+                <h2>🏎️ Carro Esportivo</h2>
+                <img id="esportivo-img" src="imagens/cesportivo.png" alt="Carro Esportivo" class="veiculo-img" />
+                <p><strong>Modelo:</strong> <span id="esportivo-modelo">Esportivo Padrão</span></p>
+                <p><strong>Marca:</strong> <span id="esportivo-marca">---</span></p>
+                <p><strong>Ano:</strong> <span id="esportivo-ano">---</span></p>
+                <p><strong>Placa:</strong> <span id="esportivo-placa">---</span></p>
+                <p><strong>Cor:</strong> <span id="esportivo-cor">Preto</span></p>
+                <p><strong>Status:</strong> <span id="esportivo-status" class="status-desligado">Desligado</span></p>
+                <p><strong>Velocidade:</strong> <span id="esportivo-velocidade">0</span> km/h</p>
+                <p><strong>Turbo:</strong> <span id="esportivo-turbo">Desativado</span></p>
+                <div class="actions mb-3">
+                    <button data-acao="ligar" data-tipo="esportivo" class="btn btn-sm btn-success">Ligar</button>
+                    <button data-acao="desligar" data-tipo="esportivo" class="btn btn-sm btn-danger">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="esportivo" class="btn btn-sm btn-info">Acelerar</button>
+                    <button data-acao="frear" data-tipo="esportivo" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="esportivo" class="btn btn-sm btn-secondary">Buzinar</button>
+                    <button data-acao="ativarTurbo" data-tipo="esportivo" class="btn btn-sm btn-warning">Turbo ON</button>
+                    <button data-acao="desativarTurbo" data-tipo="esportivo" class="btn btn-sm btn-outline-warning">Turbo OFF</button>
+                    <!-- NOVO: BOTÕES DE EDITAR E EXCLUIR -->
+                    <button data-acao="editar" data-tipo="esportivo" class="btn btn-sm btn-primary">Editar</button>
+                    <button data-acao="excluir" data-tipo="esportivo" class="btn btn-sm btn-danger">Excluir</button>
+                </div>
+                <!-- Seção de API: Previsão do Tempo -->
+                <div class="api-details-section mb-4">
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-esportivo">[Cidade]</span></h5>
+                    <div class="mb-2">
+                        <input type="text" id="cidade-previsao-input-esportivo" class="form-control form-control-sm" placeholder="Digite uma cidade..." />
+                    </div>
+                    <button id="verificar-clima-btn-esportivo" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="esportivo">Ver Previsão</button>
+                    <div class="filtros-previsao mt-2 mb-2">
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn active" data-veiculo-tipo="esportivo" data-dias="1">Hoje</button>
+                    </div>
+                    <div class="form-check form-switch mt-2 mb-2">
+                        <input class="form-check-input toggle-destaque-chuva" type="checkbox" role="switch" id="destaque-chuva-esportivo" data-veiculo-tipo="esportivo" />
+                        <label class="form-check-label" for="destaque-chuva-esportivo">Destacar chuva</label>
+                    </div>
+                    <div id="previsao-tempo-resultado-esportivo" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
+                    </div>
+                </div>
+                <!-- Seção de Manutenção -->
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <form class="manutencao-form" data-tipo="esportivo">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="esportivo-manutencao-data" class="form-control mb-2" required />
+                        <input type="text" id="esportivo-manutencao-tipo" class="form-control mb-2" placeholder="Tipo de Serviço (Ex: Troca de Pneu)" required />
+                        <input type="number" id="esportivo-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required />
+                        <textarea id="esportivo-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
+                    </form>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="esportivo-historico-lista"><li>Nenhum registro.</li></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="esportivo-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Caminhão Container -->
+            <div id="caminhao-container" class="veiculo-container" style="display: none;">
+                <h2>🚚 Caminhão</h2>
+                <img id="caminhao-img" src="imagens/caminhao.png" alt="Caminhão" class="veiculo-img" />
+                <p><strong>Modelo:</strong> <span id="caminhao-modelo">Caminhão Padrão</span></p>
+                <p><strong>Marca:</strong> <span id="caminhao-marca">---</span></p>
+                <p><strong>Ano:</strong> <span id="caminhao-ano">---</span></p>
+                <p><strong>Placa:</strong> <span id="caminhao-placa">---</span></p>
+                <p><strong>Cor:</strong> <span id="caminhao-cor">Branco</span></p>
+                <p><strong>Status:</strong> <span id="caminhao-status" class="status-desligado">Desligado</span></p>
+                <p><strong>Velocidade:</strong> <span id="caminhao-velocidade">0</span> km/h</p>
+                <p><strong>Carga:</strong> <span id="caminhao-carga">0</span> / <span id="caminhao-capacidade">5000</span> kg</p>
+                <div class="actions mb-3">
+                    <button data-acao="ligar" data-tipo="caminhao" class="btn btn-sm btn-success">Ligar</button>
+                    <button data-acao="desligar" data-tipo="caminhao" class="btn btn-sm btn-danger">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="caminhao" class="btn btn-sm btn-info">Acelerar</button>
+                    <button data-acao="frear" data-tipo="caminhao" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="caminhao" class="btn btn-sm btn-secondary">Buzinar</button>
+                    <label for="caminhao-carga-input" class="form-label d-inline-block ms-3 me-2" style="width: auto;">Carga(kg):</label>
+                    <input type="number" id="caminhao-carga-input" class="form-control form-control-sm d-inline-block" style="width: 100px;" min="1" step="1" />
+                    <button data-acao="carregar" data-tipo="caminhao" class="btn btn-sm btn-outline-primary">Carregar</button>
+                    <button data-acao="descarregar" data-tipo="caminhao" class="btn btn-sm btn-outline-info">Descarregar</button>
+                    <!-- NOVO: BOTÕES DE EDITAR E EXCLUIR -->
+                    <button data-acao="editar" data-tipo="caminhao" class="btn btn-sm btn-primary">Editar</button>
+                    <button data-acao="excluir" data-tipo="caminhao" class="btn btn-sm btn-danger">Excluir</button>
+                </div>
+                <!-- Seção de API: Previsão do Tempo -->
+                <div class="api-details-section mb-4">
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-caminhao">[Cidade]</span></h5>
+                    <div class="mb-2">
+                        <input type="text" id="cidade-previsao-input-caminhao" class="form-control form-control-sm" placeholder="Digite uma cidade..." />
+                    </div>
+                    <button id="verificar-clima-btn-caminhao" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="caminhao">Ver Previsão</button>
+                    <div class="filtros-previsao mt-2 mb-2">
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn active" data-veiculo-tipo="caminhao" data-dias="1">Hoje</button>
+                    </div>
+                    <div class="form-check form-switch mt-2 mb-2">
+                        <input class="form-check-input toggle-destaque-chuva" type="checkbox" role="switch" id="destaque-chuva-caminhao" data-veiculo-tipo="caminhao" />
+                        <label class="form-check-label" for="destaque-chuva-caminhao">Destacar chuva</label>
+                    </div>
+                    <div id="previsao-tempo-resultado-caminhao" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
+                    </div>
+                </div>
+                <!-- Seção de Manutenção -->
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <form class="manutencao-form" data-tipo="caminhao">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="caminhao-manutencao-data" class="form-control mb-2" required />
+                        <input type="text" id="caminhao-manutencao-tipo" class="form-control mb-2" placeholder="Tipo de Serviço (Ex: Calib. Pneu)" required />
+                        <input type="number" id="caminhao-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required />
+                        <textarea id="caminhao-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
+                    </form>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="caminhao-historico-lista"><li>Nenhum registro.</li></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="caminhao-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Moto Container -->
+            <div id="moto-container" class="veiculo-container" style="display: none;">
+                <h2>🏍️ Moto</h2>
+                <img id="moto-img" src="imagens/moto.png" alt="Moto" class="veiculo-img" />
+                <p><strong>Modelo:</strong> <span id="moto-modelo">Moto Padrão</span></p>
+                <p><strong>Marca:</strong> <span id="moto-marca">---</span></p>
+                <p><strong>Ano:</strong> <span id="moto-ano">---</span></p>
+                <p><strong>Placa:</strong> <span id="moto-placa">---</span></p>
+                <p><strong>Cor:</strong> <span id="moto-cor">Azul</span></p>
+                <p><strong>Status:</strong> <span id="moto-status" class="status-desligado">Desligado</span></p>
+                <p><strong>Velocidade:</strong> <span id="moto-velocidade">0</span> km/h</p>
+                <div class="actions mb-3">
+                    <button data-acao="ligar" data-tipo="moto" class="btn btn-sm btn-success">Ligar</button>
+                    <button data-acao="desligar" data-tipo="moto" class="btn btn-sm btn-danger">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="moto" class="btn btn-sm btn-info">Acelerar</button>
+                    <button data-acao="frear" data-tipo="moto" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="moto" class="btn btn-sm btn-secondary">Buzinar</button>
+                    <!-- NOVO: BOTÕES DE EDITAR E EXCLUIR -->
+                    <button data-acao="editar" data-tipo="moto" class="btn btn-sm btn-primary">Editar</button>
+                    <button data-acao="excluir" data-tipo="moto" class="btn btn-sm btn-danger">Excluir</button>
+                </div>
+                <!-- Seção de API: Previsão do Tempo -->
+                <div class="api-details-section mb-4">
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-moto">[Cidade]</span></h5>
+                    <div class="mb-2">
+                        <input type="text" id="cidade-previsao-input-moto" class="form-control form-control-sm" placeholder="Digite uma cidade..." />
+                    </div>
+                    <button id="verificar-clima-btn-moto" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="moto">Ver Previsão</button>
+                    <div class="filtros-previsao mt-2 mb-2">
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn active" data-veiculo-tipo="moto" data-dias="1">Hoje</button>
+                    </div>
+                    <div class="form-check form-switch mt-2 mb-2">
+                        <input class="form-check-input toggle-destaque-chuva" type="checkbox" role="switch" id="destaque-chuva-moto" data-veiculo-tipo="moto" />
+                        <label class="form-check-label" for="destaque-chuva-moto">Destacar chuva</label>
+                    </div>
+                    <div id="previsao-tempo-resultado-moto" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
+                    </div>
+                </div>
+                <!-- Seção de Manutenção -->
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <form class="manutencao-form" data-tipo="moto">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="moto-manutencao-data" class="form-control mb-2" required />
+                        <input type="text" id="moto-manutencao-tipo" class="form-control mb-2" placeholder="Tipo de Serviço (Ex: Troca de Pneu)" required />
+                        <input type="number" id="moto-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required />
+                        <textarea id="moto-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
+                    </form>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="moto-historico-lista"><li>Nenhum registro.</li></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="moto-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bicicleta Container -->
+            <div id="bicicleta-container" class="veiculo-container" style="display: none;">
+                <h2>🚲 Bicicleta</h2>
+                <img id="bicicleta-img" src="imagens/bicicleta.png" alt="Bicicleta" class="veiculo-img" />
+                <p><strong>Modelo:</strong> <span id="bicicleta-modelo">Bicicleta Padrão</span></p>
+                <p><strong>Cor:</strong> <span id="bicicleta-cor">Vermelha</span></p>
+                <p><strong>Status:</strong> <span id="bicicleta-status" class="status-parada">Parada</span></p>
+                <p><strong>Velocidade:</strong> <span id="bicicleta-velocidade">0</span> km/h</p>
+                <div class="actions mb-3">
+                    <button data-acao="pedalar" data-tipo="bicicleta" class="btn btn-sm btn-success">Pedalar</button>
+                    <button data-acao="frear" data-tipo="bicicleta" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="bicicleta" class="btn btn-sm btn-secondary">Buzinar (Campainha)</button>
+                    <!-- NOVO: BOTÕES DE EDITAR E EXCLUIR -->
+                    <button data-acao="editar" data-tipo="bicicleta" class="btn btn-sm btn-primary">Editar</button>
+                    <button data-acao="excluir" data-tipo="bicicleta" class="btn btn-sm btn-danger">Excluir</button>
+                </div>
+                <!-- Seção de API: Previsão do Tempo -->
+                <div class="api-details-section mb-4">
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-bicicleta">[Cidade]</span></h5>
+                    <div class="mb-2">
+                        <input type="text" id="cidade-previsao-input-bicicleta" class="form-control form-control-sm" placeholder="Digite uma cidade..." />
+                    </div>
+                    <button id="verificar-clima-btn-bicicleta" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="bicicleta">Ver Previsão</button>
+                    <div class="filtros-previsao mt-2 mb-2">
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn active" data-veiculo-tipo="bicicleta" data-dias="1">Hoje</button>
+                    </div>
+                    <div class="form-check form-switch mt-2 mb-2">
+                        <input class="form-check-input toggle-destaque-chuva" type="checkbox" role="switch" id="destaque-chuva-bicicleta" data-veiculo-tipo="bicicleta" />
+                        <label class="form-check-label" for="destaque-chuva-bicicleta">Destacar chuva</label>
+                    </div>
+                    <div id="previsao-tempo-resultado-bicicleta" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
+                    </div>
+                </div>
+                <!-- Seção de Manutenção -->
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <form class="manutencao-form" data-tipo="bicicleta">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="bicicleta-manutencao-data" class="form-control mb-2" required />
+                        <input type="text" id="bicicleta-manutencao-tipo" class="form-control mb-2" placeholder="Tipo de Serviço (Ex: Revisão Freios)" required />
+                        <input type="number" id="bicicleta-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required />
+                        <textarea id="bicicleta-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
+                    </form>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="bicicleta-historico-lista"><li>Nenhum registro.</li></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="bicicleta-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NOVAS SEÇÕES DA ATIVIDADE B2.P1.A9 -->
+            <!-- Estas seções serão preenchidas com dados dos novos endpoints GET do backend -->
+
+            <section id="secao-veiculos-destaque" style="margin-top: 40px; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                <h2>✨ Veículos em Destaque na Garagem ✨</h2>
+                <div id="cards-veiculos-destaque" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+                    <p>Carregando destaques...</p>
+                </div>
+            </section>
+
+            <section id="secao-servicos" style="margin-top: 40px; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                <h2>🛠️ Nossos Serviços de Oficina 🛠️</h2>
+                <ul id="lista-servicos-oferecidos" style="list-style: none; padding: 0; display: grid; gap: 15px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+                    <p>Carregando serviços...</p>
+                </ul>
+            </section>
+
+            <section id="secao-ferramentas" style="margin-top: 40px; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                <h2>🔧 Ferramentas Essenciais (Com Teste de ID) 🔧</h2>
+                <div id="botoes-ferramentas" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+                </div>
+                <h3>Detalhe da Ferramenta Selecionada</h3>
+                <div id="detalhe-ferramenta" style="border: 1px dashed #bbb; padding: 15px; border-radius: 5px;">
+                    <p>Clique em um dos botões acima para ver os detalhes de uma ferramenta específica.</p>
+                </div>
+            </section>
+            
+        </main>
+    </div>
+
+    <!-- Seus arquivos de som. Verifique se a pasta 'sons/' e os arquivos MP3 estão corretos. -->
+    <audio id="ligar-audio" src="sons/carroligando.mp3"></audio>
+    <audio id="desligar-audio" src="sons/carrodesligando.mp3"></audio>
+    <audio id="acelerar-audio" src="sons/carroacelerando.mp3"></audio>
+    <audio id="frear-audio" src="sons/freio.mp3"></audio>
+    <audio id="buzinar-audio" src="sons/buzina.mp3"></audio>
+    <!-- Adicione referências a outros arquivos de som aqui, se usados em suas classes JS (ex: campainha.mp3, buzina-esportivo.mp3) -->
+
+    <!-- IMPORTANTE: LINK PARA SEU ARQUIVO JAVASCRIPT PRINCIPAL -->
+    <!-- Garanta que o 'src' aponta para o seu arquivo JS principal.
+        Se ele estiver em uma subpasta (ex: 'js/script.js'), o src deve ser `src="js/script.js"`.
+        O atributo `type="module"` é CRÍTICO porque seus arquivos JS agora usam a sintaxe `import`/`export`. -->
+    <script type="module" src="script.js"></script> 
+</body>
+</html>
