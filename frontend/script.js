@@ -10,8 +10,8 @@ import { Manutencao } from './Manutencao.js';
 import { mostrarFeedback } from './funcoesAuxiliares.js';
 
 const backendLocalUrl = 'http://localhost:3001';
-// IMPORTANTE: Insira seu link público REAL do Render aqui.
-const backendRenderUrl = 'https://minha-garagem-online.onrender.com'; // <--- COLOQUE SEU LINK DO RENDER AQUI
+// ESTE É O SEU LINK CORRETO, DE ACORDO COM O PRINT QUE VOCÊ MANDOU!
+const backendRenderUrl = 'https://garagem-inteligente-ww4f.onrender.com';
 // AGORA VAMOS USAR O LINK DO RENDER PARA AS CHAMADAS ONLINE
 const backendUrl = backendRenderUrl; 
 
