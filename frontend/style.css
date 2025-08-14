@@ -1,0 +1,460 @@
+/* ginteligente/style.css */
+/* CONTEÚDO COMPLETO DO ARQUIVO: SUBSTITUA TUDO QUE JÁ EXISTE POR ISTO. */
+
+/* === BÁSICO E RESET === */
+/* Reseta a caixa de dimensionamento para border-box, facilitando o layout */
+html { box-sizing: border-box; }
+/* Aplica border-box a todos os elementos, incluindo pseudo-elementos */
+*, *:before, *:after { box-sizing: inherit; }
+/* Estilos globais para o corpo da página */
+body { 
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* Define uma fonte moderna e segura */
+    line-height: 1.6; /* Espaçamento entre linhas para melhor leitura */
+    margin: 0; /* Remove margem padrão do body */
+    background-color: #f8f9fa; /* Cor de fundo clara para a aplicação */
+    color: #212529; /* Cor de texto padrão */
+    display: flex; /* Habilita Flexbox para o layout principal (sidebar + conteúdo) */
+    flex-direction: column; /* Coloca os itens em coluna (se necessário para um rodapé fixo) */
+    min-height: 100vh; /* Garante que o body ocupe pelo menos 100% da altura da viewport */
+}
+
+/* === CONTAINER PRINCIPAL DA APLICAÇÃO === */
+/* O `app-container` envolve toda a sidebar e o conteúdo principal. */
+#app-container { 
+    display: flex; /* Ativa Flexbox para a disposição horizontal de sidebar e main content */
+    flex-grow: 1; /* Permite que ocupe o espaço disponível */
+    width: 100%; /* Ocupa a largura total */
+    padding-top: 20px; /* Espaçamento no topo para afastar do limite da janela */
+    padding-left: 20px; /* Espaçamento à esquerda para afastar da borda */
+}
+
+/* === BARRA LATERAL DE NAVEGAÇÃO (SIDEBAR) === */
+#sidebar { 
+    width: 230px; /* Largura fixa da barra lateral */
+    background-color: #343a40; /* Cor escura de fundo (como a barra de navegação do Bootstrap) */
+    color: #dee2e6; /* Cor do texto para contraste */
+    padding: 20px 15px; /* Preenchimento interno */
+    height: 100vh; /* Ocupa 100% da altura da viewport, fixando-a */
+    position: fixed; /* Fixa a barra lateral na tela */
+    left: 0; /* Alinha à esquerda */
+    top: 0; /* Alinha ao topo */
+    overflow-y: auto; /* Adiciona barra de rolagem vertical se o conteúdo exceder a altura */
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1); /* Sombra para dar um efeito de profundidade */
+    z-index: 1000; /* Garante que a sidebar fique acima de outros elementos se houver sobreposição */
+}
+/* Título dentro da sidebar */
+#sidebar h2 { 
+    text-align: center; /* Centraliza o texto do título */
+    margin-bottom: 30px; /* Margem abaixo */
+    color: #f8f9fa; /* Cor mais clara para o título */
+    font-size: 1.6em; /* Tamanho da fonte */
+    font-weight: 300; /* Espessura da fonte */
+}
+/* Lista de menu na sidebar */
+#sidebar-menu { 
+    list-style: none; /* Remove marcadores de lista padrão */
+    padding: 0; /* Remove preenchimento padrão da lista */
+    margin: 0; /* Remove margem padrão da lista */
+}
+#sidebar-menu li { 
+    margin-bottom: 2px; /* Espaçamento vertical entre os itens da lista */
+}
+/* Estilo padrão para links de veículos na sidebar */
+#sidebar-menu li.veiculo-item a { 
+    color: #adb5bd; /* Cor de texto mais suave para itens normais */
+}
+/* Estilo para links de ação na sidebar (ex: "Adicionar Veículo") */
+#sidebar-menu li.sidebar-action a { 
+    color: #17a2b8; /* Cor diferenciada para ações */ 
+    font-weight: 500; /* Deixa o texto um pouco mais encorpado */
+}
+/* Estilos gerais para todos os links do menu na sidebar */
+#sidebar-menu a { 
+    display: block; /* Ocupa a largura total do item de lista, tornando a área clicável maior */
+    text-decoration: none; /* Remove o sublinhado padrão dos links */
+    padding: 10px 18px; /* Preenchimento interno do link */
+    border-radius: 5px; /* Cantos arredondados */
+    transition: background-color 0.2s ease, color 0.2s ease; /* Transição suave de cor de fundo e texto no hover */
+    font-size: 0.95em; /* Tamanho da fonte levemente menor */
+}
+/* Efeito de hover para links do menu */
+#sidebar-menu a:hover { 
+    background-color: #495057; /* Fundo mais escuro no hover */
+    color: #fff; /* Texto branco no hover */
+}
+/* Estilo para o link que está 'ativo' (selecionado no momento) */
+#sidebar-menu a.active { 
+    background-color: #007bff; /* Fundo azul padrão do Bootstrap */
+    color: #fff; /* Texto branco */
+    font-weight: 500; /* Mais encorpado */
+}
+/* Efeito de hover específico para links de ação na sidebar */
+#sidebar-menu li.sidebar-action a:hover { 
+    background-color: #138496; /* Cor ligeiramente mais escura no hover */
+    color: #fff;
+}
+
+/* === ÁREA DE CONTEÚDO PRINCIPAL (MAIN CONTENT) === */
+#main-content { 
+    flex-grow: 1; /* Permite que ocupe todo o espaço horizontal restante */
+    padding: 35px; /* Preenchimento interno para o conteúdo */
+    margin-left: 230px; /* Garante que o conteúdo não se sobreponha à sidebar */
+    background-color: #ffffff; /* Fundo branco para a área de conteúdo */
+    position: relative; /* Importante para posicionamento absoluto/sticky de elementos filhos como o feedback */
+}
+
+/* --- MENSAGEM DE FEEDBACK AO USUÁRIO --- */
+#feedback-message {
+    padding: 15px 20px; /* Preenchimento interno */
+    margin-bottom: 25px; /* Margem inferior */
+    border-radius: 6px; /* Cantos arredondados */
+    font-size: 0.95em; /* Tamanho da fonte */
+    font-weight: 500; /* Espessura da fonte */
+    display: none; /* Inicia escondida, será mostrada/escondida via JavaScript */
+    border: 1px solid transparent; /* Borda padrão transparente */
+    position: sticky; /* Permanece visível no topo da tela enquanto o usuário rola a página */
+    top: 15px;      /* Distância do topo da tela */
+    z-index: 1001; /* Garante que fique acima da maioria dos outros elementos */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Sombra suave para destacar */
+}
+/* Estilos específicos para os diferentes TIPOS de feedback (definidos via JS adicionando classes) */
+#feedback-message.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; } /* Verde para sucesso */
+#feedback-message.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; } /* Vermelho para erro */
+#feedback-message.warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; } /* Amarelo para aviso */
+#feedback-message.info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; } /* Azul para informação */
+
+/* === MENSAGEM DE BOAS-VINDAS INICIAL === */
+#welcome-message { 
+    display: block; /* Inicia visível, será escondida pelo JS quando um veículo for selecionado/adicionado */
+    text-align: center; /* Centraliza o texto */
+    color: #6c757d; /* Cor de texto suave */
+    margin: 40px auto; /* Margem superior/inferior e centraliza horizontalmente */
+    padding: 30px; /* Preenchimento interno */
+    background-color: #e9ecef; /* Fundo cinza claro */
+    border-radius: 8px; /* Cantos arredondados */
+    max-width: 600px; /* Largura máxima */
+    border: 1px solid #dee2e6; /* Borda sutil */
+}
+#welcome-message h1 { 
+    margin-top: 0; 
+    margin-bottom: 15px; 
+    color: #495057; 
+    font-weight: 400; 
+}
+
+/* === FORMULÁRIO PARA ADICIONAR NOVO VEÍCULO === */
+.form-container {
+    display: none; /* Inicia escondido, será mostrado/escondido via JavaScript */
+    border: 1px solid #dee2e6; /* Borda */
+    padding: 25px 30px; /* Preenchimento */
+    margin-top: 0; 
+    border-radius: 8px; /* Cantos arredondados */
+    background-color: #fff; /* Fundo branco */
+    box-shadow: 0 3px 8px rgba(0,0,0,0.05); /* Sombra */
+    margin-bottom: 30px; 
+    max-width: 600px; /* Largura máxima */
+    margin-left: auto; /* Centraliza horizontalmente */
+    margin-right: auto; 
+}
+.form-container h2 { 
+    text-align: center; /* Centraliza o título do formulário */
+    color: #0056b3; /* Cor do título */
+    margin-top: 0; 
+    margin-bottom: 25px; 
+    padding-bottom: 12px; 
+    border-bottom: 1px solid #e9ecef; /* Linha divisória */
+    font-weight: 500; 
+}
+.form-group { margin-bottom: 18px; } /* Espaçamento entre grupos de formulário */
+.form-group label { 
+    display: block; /* Garante que o label ocupe uma linha inteira */
+    margin-bottom: 6px; 
+    color: #495057; 
+    font-weight: 500; 
+    font-size: 0.9em; 
+}
+.form-group input[type="text"], 
+.form-group input[type="number"], 
+.form-group select { 
+    width: 100%; /* Ocupa 100% da largura do contêiner */
+    padding: 10px 12px; /* Preenchimento */
+    border: 1px solid #ced4da; /* Borda */
+    border-radius: 4px; /* Cantos arredondados */
+    font-size: 1em; 
+    transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Efeito de transição no focus */
+}
+.form-group input:focus, 
+.form-group select:focus { 
+    border-color: #80bdff; /* Cor da borda no focus */
+    outline: 0; 
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Sombra azul para o focus (padrão Bootstrap) */
+}
+/* Estilos para botões dentro do form-container */
+.form-container button { 
+    padding: 10px 20px; 
+    font-size: 1em; 
+    border-radius: 5px; 
+    cursor: pointer; 
+    transition: background-color 0.2s ease; 
+    border: none; 
+    margin-top: 10px; 
+    margin-right: 10px; 
+}
+.form-container button[type="submit"] { background-color: #28a745; color: white; } /* Botão de sucesso (verde) */
+.form-container button[type="submit"]:hover { background-color: #218838; }
+.form-container button[type="button"] { background-color: #6c757d; color: white; } /* Botão secundário (cinza) */
+.form-container button[type="button"]:hover { background-color: #5a6268; }
+
+/* === CONTAINERS DE VEÍCULOS INDIVIDUAIS === */
+/* Cada veículo terá seu próprio contêiner (ex: #carro-container, #esportivo-container) */
+.veiculo-container { 
+    display: none; /* Inicia escondido, será mostrado pelo JavaScript */
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+    max-width: 900px; 
+    margin-left: auto; /* Centraliza horizontalmente */
+    margin-right: auto;
+}
+/* Título do contêiner de veículo (ex: "Carro Casual") */
+.veiculo-container h2 { 
+    text-align: left; 
+    color: #0056b3; 
+    margin-top: 0; 
+    margin-bottom: 25px; 
+    padding-bottom: 12px; 
+    border-bottom: 1px solid #e9ecef; 
+    font-weight: 500; 
+}
+/* Imagem do veículo dentro do contêiner */
+.veiculo-img { 
+    display: block; /* Garante que ocupe a largura total disponível e centraliza */
+    margin: 0 auto 25px auto; 
+    max-width: 200px; /* Largura máxima da imagem */
+    border-radius: 5px; 
+    transition: transform 0.15s ease-in-out; /* Para animação de aceleração/frenagem via JS */
+}
+/* Parágrafos de informações do veículo */
+.veiculo-container p { margin: 10px 0; color: #495057; font-size: 1em; }
+.veiculo-container p strong { color: #212529; min-width: 80px; display: inline-block; } /* Destaca o rótulo da informação */
+
+/* === SEÇÃO DE AÇÕES DOS VEÍCULOS (Botões de controle) === */
+.actions { 
+    margin-top: 20px; 
+    border-top: 1px dashed #e9ecef; 
+    padding-top: 20px; 
+    text-align: center; 
+}
+/* Estilos gerais para botões e inputs dentro da seção de ações */
+.actions button, .actions input[type="number"], .actions label { 
+    margin: 6px; 
+    padding: 9px 14px; 
+    cursor: pointer; 
+    border-radius: 4px; 
+    border: 1px solid #ced4da; 
+    vertical-align: middle; 
+    font-size: 0.9em; 
+}
+/* Estilos padrão para botões de ação */
+.actions button { 
+    background-color: #17a2b8; /* Azul claro padrão */
+    color: white; 
+    border-color: #17a2b8; 
+    transition: background-color 0.2s ease, border-color 0.2s ease; 
+}
+/* Efeito de hover para botões habilitados */
+.actions button:hover:enabled { 
+    background-color: #138496; 
+    border-color: #117a8b; 
+}
+/* Estilo para botões desabilitados */
+.actions button:disabled { 
+    background-color: #e9ecef; 
+    border-color: #dee2e6; 
+    color: #6c757d; 
+    cursor: not-allowed; 
+    opacity: 0.7; 
+} 
+/* Cores específicas para os botões Ligar/Desligar e Turbo (usando `data-acao` do HTML) */
+.actions button[data-acao="ligar"] { background-color: #28a745; border-color: #28a745;} /* Ligar: verde */
+.actions button[data-acao="ligar"]:hover:enabled { background-color: #218838; border-color: #1e7e34;}
+.actions button[data-acao="desligar"] { background-color: #dc3545; border-color: #dc3545;} /* Desligar: vermelho */
+.actions button[data-acao="desligar"]:hover:enabled { background-color: #c82333; border-color: #bd2130;}
+.actions button[data-acao="ativarTurbo"] { background-color: #ffc107; color: #212529; border-color: #ffc107;} /* Turbo ON: amarelo */
+.actions button[data-acao="ativarTurbo"]:hover:enabled { background-color: #e0a800; border-color: #d39e00;}
+.actions button[data-acao="desativarTurbo"] { background-color: #fff3cd; color: #856404; border-color: #ffeeba;} /* Turbo OFF: amarelo claro, cor do texto escura */
+.actions button[data-acao="desativarTurbo"]:hover:enabled { background-color: #fce8ad; border-color: #fcdf8b;}
+
+/* Largura para inputs de número (ex: carga do caminhão) */
+.actions input[type="number"] { width: 90px; }
+
+/* === ESTILOS PARA O STATUS DO VEÍCULO === */
+.status-ligado { color: #28a745; font-weight: bold; } /* Verde para "Ligado" */
+.status-desligado { color: #dc3545; font-weight: bold; } /* Vermelho para "Desligado" */
+.status-parada { color: #6c757d; font-weight: bold;} /* Cinza para "Parada" (usado na bicicleta) */
+.status-pedalando { color: #007bff; font-weight: bold;} /* Azul para "Pedalando" (usado na bicicleta) */
+
+/* === ANIMAÇÕES SIMPLES DA IMAGEM DO VEÍCULO === */
+.veiculo-img.acelerando { transform: scale(1.03) translateX(4px); } /* Cresce e desloca um pouco */
+.veiculo-img.freando { transform: scale(0.97) translateX(-2px); } /* Diminui e desloca um pouco */
+
+/* === SEÇÃO DE MANUTENÇÃO === */
+.manutencao-section { 
+    border-top: 1px solid #e9ecef; /* Linha superior */
+    margin-top: 30px; 
+    padding-top: 25px; 
+}
+.manutencao-section h4 { 
+    margin-bottom: 20px; 
+    color: #495057; 
+    text-align: center; 
+    font-size: 1.3em; 
+    font-weight: 400; 
+}
+/* Formulário de adição de manutenção */
+.manutencao-form { 
+    margin-bottom: 25px; 
+    padding: 20px; 
+    background-color: #f8f9fa; /* Fundo cinza claro */
+    border: 1px solid #dee2e6; 
+    border-radius: 6px; 
+}
+.manutencao-form h5 { 
+    margin-top: 0; 
+    margin-bottom: 15px; 
+    color: #6c757d; 
+    font-weight: 500;
+}
+.manutencao-form input, 
+.manutencao-form textarea { 
+    display: block; 
+    width: 100%; 
+    padding: 10px 12px; 
+    margin-bottom: 12px; 
+    border: 1px solid #ced4da; 
+    border-radius: 4px; 
+    font-size: 0.95em; 
+}
+.manutencao-form textarea { 
+    min-height: 70px; 
+    resize: vertical; /* Permite redimensionar verticalmente */
+}
+.manutencao-form button { 
+    padding: 10px 18px; 
+    background-color: #28a745; 
+    color: white; 
+    border: none; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    transition: background-color 0.2s ease; 
+    font-size: 0.95em; 
+    display: block; 
+    margin: 15px auto 0 auto; 
+    width: auto; 
+}
+.manutencao-form button:hover { 
+    background-color: #218838; 
+}
+/* Seções para exibir histórico e agendamentos de manutenção */
+.manutencao-display { margin-bottom: 20px; }
+.manutencao-display h5 { 
+    margin-bottom: 10px; 
+    color: #6c757d; 
+    font-size: 1.1em; 
+    font-weight: 500; 
+    border-bottom: 1px solid #eee; 
+    padding-bottom: 5px;
+}
+.manutencao-display ul { 
+    list-style: none; /* Remove marcadores */
+    padding-left: 0; 
+    margin-top: 0; 
+    max-height: 180px; /* Altura máxima com scroll */
+    overflow-y: auto; /* Adiciona scroll se exceder altura */
+    border: 1px solid #e9ecef; 
+    padding: 15px; 
+    background-color: #fff; 
+    border-radius: 4px; 
+}
+.manutencao-display ul li { 
+    padding: 8px 5px; 
+    font-size: 0.9em; 
+    color: #495057; 
+    border-bottom: 1px dashed #e9ecef; 
+    display: flex; /* Para alinhar texto e botão */
+    justify-content: space-between; /* Espaço entre texto e botão */
+    align-items: center; /* Alinha verticalmente */
+    word-break: break-word; /* Permite que o texto quebre linhas */
+}
+/* Botão de remover individual de cada item de manutenção */
+.manutencao-display ul li .remover-manutencao-btn {
+    background: none; /* Sem fundo */
+    border: none; /* Sem borda */
+    color: #dc3545; /* Cor vermelha para indicar ação de remoção */
+    font-size: 1.1em; 
+    cursor: pointer; 
+    padding: 0 5px; 
+    margin-left: 10px; 
+    flex-shrink: 0; /* Impede o botão de diminuir se o texto for muito longo */
+}
+.manutencao-display ul li .remover-manutencao-btn:hover {
+    color: #c82333; /* Cor mais escura no hover */
+}
+.manutencao-display ul li:empty { display: none; } /* Esconde itens vazios */
+.manutencao-display ul li:last-child { border-bottom: none; } /* Remove borda do último item */
+
+
+/* === SEÇÕES DE DETALHES DE API (Clima e Atividade B2.P1.A9) === */
+.api-details-section { 
+    margin-top: 20px; 
+    padding-top: 15px; 
+    border-top: 1px solid #eee; 
+}
+.previsao-tempo-resultado {
+    margin-top: 10px;
+    border: 1px dashed #ccc;
+    padding: 10px;
+    min-height: 100px;
+    background-color: #f9f9f9;
+}
+/* Estilos para os CARDS de "Veículos em Destaque" (da Atividade B2.P1.A9) */
+.veiculo-card-destaque {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    width: 240px; /* Largura fixa para os cards, para um layout uniforme */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background-color: #fff;
+    flex-shrink: 0; /* Impede o card de encolher em um flex container */
+}
+.veiculo-card-destaque img {
+    width:100%; 
+    height:auto; 
+    max-height: 120px; 
+    object-fit: cover; /* Garante que a imagem preencha o espaço sem distorcer, cortando se necessário */
+    border-radius: 4px; 
+    margin-bottom: 10px;
+}
+.veiculo-card-destaque h3 { margin: 0 0 5px; font-size: 1.1em; color: #333; }
+.veiculo-card-destaque p { font-size: 0.85em; color: #666; margin: 0; }
+
+/* === RODAPÉ === */
+footer { 
+    background-color: #e9ecef; 
+    color: #6c757d; 
+    text-align: center; 
+    padding: 15px 0; 
+    margin-top: auto; /* Empurra o rodapé para baixo se o conteúdo for curto */
+    border-top: 1px solid #dee2e6; 
+    width: 100%; 
+    font-size: 0.85em; 
+}
+footer p { margin: 0; }
+
+/* === UTILITÁRIOS === */
+/* Esconde elementos de áudio HTML para que não apareçam na página. */
+audio { display: none; }

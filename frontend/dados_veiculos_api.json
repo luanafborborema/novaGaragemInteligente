@@ -1,0 +1,25 @@
+[
+    {
+      "placa": "ABC1234",
+      "valorFipe": "R$ 55.000,00",
+      "temRecall": false,
+      "dicaManutencao": "Verificar nível do óleo a cada 5.000km.",
+      "ultimaRevisaoAPI": "2023-10-15"
+    },
+    {
+      "placa": "AXL7406",
+      "valorFipe": "R$ 120.000,00",
+      "temRecall": true,
+      "recallInfo": "Recall do sistema de freios. Verificar concessionária.",
+      "dicaManutencao": "Calibrar pneus esportivos semanalmente.",
+      "ultimaRevisaoAPI": "2024-01-20"
+    },
+    {
+      "placa": "ANO7F35",
+      "valorFipe": "R$ 250.000,00",
+      "temRecall": false,
+      "dicaManutencao": "Inspecionar sistema hidráulico da caçamba regularmente.",
+      "capacidadeCargaAPI": "15 Toneladas",
+      "ultimaRevisaoAPI": "2023-11-30"
+    }
+]
