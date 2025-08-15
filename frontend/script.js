@@ -11,8 +11,7 @@ import { mostrarFeedback } from './funcoesAuxiliares.js';
 
 const backendLocalUrl = 'http://localhost:3001';
 // IMPORTANTE: Insira seu link público REAL do Render aqui.
-const backendRenderUrl = 'https://minha-garagem-online.onrender.com'; // <--- USE O SEU LINK CORRETO DO RENDER AQUI
-// AGORA VAMOS USAR O LINK DO RENDER PARA AS CHAMADAS ONLINE
+const backendRenderUrl = 'https://garagem-inteligente-ww4f.onrender.com';
 const backendUrl = backendRenderUrl; 
 
 console.log(`[FRONTEND] O script será executado com o backend em: ${backendUrl}`);
