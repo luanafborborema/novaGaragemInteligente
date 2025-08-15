@@ -1,5 +1,5 @@
 // script.js
-// Conteúdo COMPLETO e CORRIGIDO do arquivo JavaScript principal do frontend.
+// Conteúdo COMPLETO e FINAL do arquivo JavaScript principal do frontend.
 
 import { Carro } from './Carro.js';
 import { CarroEsportivo } from './CarroEsportivo.js';
@@ -10,8 +10,8 @@ import { Manutencao } from './Manutencao.js';
 import { mostrarFeedback } from './funcoesAuxiliares.js';
 
 const backendLocalUrl = 'http://localhost:3001';
-// ESTE É O SEU LINK CORRETO, DE ACORDO COM O PRINT QUE VOCÊ MANDOU!
-const backendRenderUrl = 'https://garagem-inteligente-ww4f.onrender.com';
+// IMPORTANTE: Insira seu link público REAL do Render aqui.
+const backendRenderUrl = 'https://minha-garagem-online.onrender.com'; // <--- USE O SEU LINK CORRETO DO RENDER AQUI
 // AGORA VAMOS USAR O LINK DO RENDER PARA AS CHAMADAS ONLINE
 const backendUrl = backendRenderUrl; 
 
@@ -38,6 +38,7 @@ let veiculoAtivoId = null;
 
 // Elementos DOM
 const mainContent = document.getElementById('main-content');
+const addVeiculoForm = document.getElementById('add-veiculo-form');
 const editVeiculoFormContainer = document.getElementById('edit-veiculo-form-container');
 const editVeiculoForm = document.getElementById('edit-veiculo-form');
 const cancelEditVeiculoBtn = document.getElementById('cancel-edit-veiculo');
@@ -46,11 +47,9 @@ const cancelEditVeiculoBtn = document.getElementById('cancel-edit-veiculo');
 // FUNÇÕES PRINCIPAIS DE GERENCIAMENTO
 // ===========================================================================
 
-/** Atualiza a UI com os dados do veículo selecionado. */
 function mostrarVeiculoContainer(veiculoId) {
     const veiculo = veiculosInstanciados[veiculoId];
     if (!veiculo) return;
-    
     veiculoAtivoId = veiculoId;
     
     document.querySelectorAll('.veiculo-container').forEach(c => c.style.display = 'none');
@@ -68,22 +67,19 @@ function mostrarVeiculoContainer(veiculoId) {
 
         if (veiculo.atualizarStatus) veiculo.atualizarStatus();
         if (veiculo.atualizarVelocidade) veiculo.atualizarVelocidade();
-        if (veiculo.atualizarDisplayManutencao) veiculo.atualizarDisplayManutencao();
         if (veiculo.atualizarEstadoBotoesWrapper) veiculo.atualizarEstadoBotoesWrapper();
-        if (veiculo instanceof CarroEsportivo && veiculo.atualizarTurboDisplay) veiculo.atualizarTurboDisplay();
-        if (veiculo instanceof Caminhao && veiculo.atualizarInfoCaminhao) veiculo.atualizarInfoCaminhao();
+        if (veiculo instanceof CarroEsportivo) veiculo.atualizarTurboDisplay();
+        if (veiculo instanceof Caminhao) veiculo.atualizarInfoCaminhao();
     }
 }
 
-/** Carrega os veículos do backend e os adiciona na interface. */
 async function carregarGaragem() {
     try {
         const response = await fetch(`${backendUrl}/api/veiculos`);
-        if (!response.ok) throw new Error('Não foi possível carregar os veículos do servidor.');
+        if (!response.ok) throw new Error('Não foi possível carregar os veículos.');
         
         const veiculosDoBackend = await response.json();
         
-        // Limpa estado atual
         Object.keys(veiculosInstanciados).forEach(key => delete veiculosInstanciados[key]);
         document.querySelectorAll('.veiculo-item').forEach(item => item.remove());
 
@@ -104,10 +100,8 @@ async function carregarGaragem() {
             instancia.marca = dados.marca;
             instancia.ano = dados.ano;
 
-            // Adiciona ao mapa local
             veiculosInstanciados[instancia._id] = instancia;
 
-            // Adiciona à sidebar
             const li = document.createElement('li');
             li.className = 'veiculo-item';
             const displayTexto = instancia.placa && !instancia.placa.startsWith('BIKE-') 
@@ -129,10 +123,9 @@ async function carregarGaragem() {
     }
 }
 
-/** Lida com a busca da previsão do tempo. */
 async function buscarPrevisaoTempo(cidade, tipoVeiculo) {
     if (!cidade) {
-        mostrarFeedback('Por favor, digite o nome de uma cidade.', 'warning');
+        mostrarFeedback('Digite o nome de uma cidade.', 'warning');
         return;
     }
 
@@ -149,7 +142,7 @@ async function buscarPrevisaoTempo(cidade, tipoVeiculo) {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || 'Erro desconhecido ao buscar previsão.');
+            throw new Error(data.error || 'Erro ao buscar previsão.');
         }
 
         nomeCidadeSpan.textContent = `${data.nomeCidade}, ${data.pais}`;
@@ -161,12 +154,31 @@ async function buscarPrevisaoTempo(cidade, tipoVeiculo) {
                 <p>Sensação: ${data.sensacaoTermica.toFixed(1)}°C</p>
             </div>`;
     } catch (error) {
-        console.error('Erro ao buscar previsão:', error);
         mostrarFeedback(error.message, 'error');
         resultadoDiv.innerHTML = `<p style="color:red;">Falha ao buscar previsão.</p>`;
     } finally {
         botao.disabled = false;
     }
+}
+
+function preencherFormularioEdicao(veiculo) {
+    document.getElementById('edit-veiculo-id').value = veiculo._id;
+    document.getElementById('edit-veiculo-placa-original').value = veiculo.placa;
+    document.getElementById('edit-veiculo-tipo').value = veiculo.getTipo();
+    document.getElementById('edit-veiculo-modelo-title').textContent = veiculo.modelo;
+    document.getElementById('edit-modelo').value = veiculo.modelo;
+    document.getElementById('edit-placa').value = veiculo.placa;
+    document.getElementById('edit-cor').value = veiculo.cor;
+    document.getElementById('edit-marca').value = veiculo.marca || '';
+    document.getElementById('edit-ano').value = veiculo.ano || '';
+
+    const editPlacaInput = document.getElementById('edit-placa');
+    editPlacaInput.closest('.mb-3').style.display = (veiculo.getTipo() === 'bicicleta') ? 'none' : 'block';
+    
+    document.getElementById('welcome-message').style.display = 'none';
+    document.getElementById('add-veiculo-form-container').style.display = 'none';
+    document.querySelectorAll('.veiculo-container').forEach(c => c.style.display = 'none');
+    editVeiculoFormContainer.style.display = 'block';
 }
 
 // ===========================================================================
@@ -175,50 +187,66 @@ async function buscarPrevisaoTempo(cidade, tipoVeiculo) {
 document.addEventListener('DOMContentLoaded', () => {
     carregarGaragem();
     
-    // Event listener para toda a área de conteúdo principal
-    mainContent.addEventListener('click', (e) => {
+    mainContent.addEventListener('click', async (e) => {
         const target = e.target;
-        
+        const veiculo = veiculosInstanciados[veiculoAtivoId];
+
         // Botão de Ver Previsão
         if (target.classList.contains('verificar-clima-btn-veiculo')) {
             const tipo = target.dataset.veiculoTipo;
             const cidadeInput = document.getElementById(`cidade-previsao-input-${tipo}`);
-            if (cidadeInput) {
-                buscarPrevisaoTempo(cidadeInput.value, tipo);
-            }
+            if (cidadeInput) buscarPrevisaoTempo(cidadeInput.value, tipo);
         }
 
-        // Ações de POO dos veículos
+        // Ações de POO, Editar e Excluir
         if (target.dataset.acao) {
-            const veiculo = veiculosInstanciados[veiculoAtivoId];
             if (!veiculo) return;
-
             const acao = target.dataset.acao;
+
+            // LÓGICA DE EDITAR
+            if (acao === 'editar') {
+                preencherFormularioEdicao(veiculo);
+                return;
+            }
+
+            // LÓGICA DE EXCLUIR
+            if (acao === 'excluir') {
+                if (!confirm(`Tem certeza que deseja excluir o veículo "${veiculo.modelo}"?`)) return;
+                try {
+                    const response = await fetch(`${backendUrl}/api/veiculos/${veiculo._id}`, { method: 'DELETE' });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error);
+                    mostrarFeedback(`"${veiculo.modelo}" foi excluído.`, 'success');
+                    await carregarGaragem();
+                } catch (error) {
+                    mostrarFeedback(error.message, 'error');
+                }
+                return;
+            }
+            
+            // Ações de POO
             if (typeof veiculo[acao] === 'function') {
                 veiculo[acao](window.sons);
             }
         }
     });
 
-    // Event listener para a sidebar
     document.getElementById('sidebar-menu').addEventListener('click', (e) => {
         const link = e.target.closest('a');
         if (!link) return;
-
         e.preventDefault();
-
+        
         if (link.dataset.action === 'mostrarFormAddVeiculo') {
             document.querySelectorAll('.veiculo-container, #edit-veiculo-form-container').forEach(c => c.style.display = 'none');
             document.getElementById('welcome-message').style.display = 'none';
             document.getElementById('add-veiculo-form-container').style.display = 'block';
-            document.getElementById('add-veiculo-form').reset();
+            addVeiculoForm.reset();
         } else if (link.dataset.veiculoId) {
             mostrarVeiculoContainer(link.dataset.veiculoId);
         }
     });
     
-    // Formulário de adicionar novo veículo
-    document.getElementById('add-veiculo-form').addEventListener('submit', async (e) => {
+    addVeiculoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const tipo = formData.get('tipo');
@@ -238,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `BIKE-${Math.random().toString(36).substring(2, 9).toUpperCase()}` 
                 : placa.toUpperCase()
         };
-
+        
         if (tipo === 'caminhao') {
             dadosParaBackend.capacidadeCarga = Number(formData.get('capacidade')) || 0;
             dadosParaBackend.cargaAtual = 0;
@@ -250,27 +278,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dadosParaBackend)
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Erro ao criar veículo.');
-            }
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
             
-            const novoVeiculo = await response.json();
-            mostrarFeedback(`"${novoVeiculo.modelo}" foi criado com sucesso!`, 'success');
+            mostrarFeedback(`"${data.modelo}" criado com sucesso!`, 'success');
             await carregarGaragem();
-            mostrarVeiculoContainer(novoVeiculo._id);
-
+            mostrarVeiculoContainer(data._id);
         } catch (error) {
-            console.error('Erro ao adicionar veículo:', error);
             mostrarFeedback(error.message, 'error');
         }
     });
-});
 
-/** Funções que não precisam estar dentro do 'DOMContentLoaded' */
-function salvarGaragem() {
-    const dadosParaSalvar = Object.values(veiculosInstanciados).map(v => v.toJSON());
-    localStorage.setItem('garagemInteligente', JSON.stringify(dadosParaSalvar));
-}
-window.salvarGaragem = salvarGaragem;
+    editVeiculoForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const veiculoId = document.getElementById('edit-veiculo-id').value;
+        const dadosAtualizacao = {
+            modelo: document.getElementById('edit-modelo').value,
+            placa: document.getElementById('edit-placa').value.toUpperCase(),
+            cor: document.getElementById('edit-cor').value,
+            marca: document.getElementById('edit-marca').value,
+            ano: Number(document.getElementById('edit-ano').value)
+        };
+        try {
+            const response = await fetch(`${backendUrl}/api/veiculos/${veiculoId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dadosAtualizacao)
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
+            
+            mostrarFeedback(`"${data.modelo}" atualizado com sucesso!`, 'success');
+            await carregarGaragem();
+            mostrarVeiculoContainer(data._id);
+        } catch (error) {
+            mostrarFeedback(error.message, 'error');
+        }
+    });
+
+    cancelEditVeiculoBtn.addEventListener('click', () => {
+        editVeiculoFormContainer.style.display = 'none';
+        if(veiculoAtivoId) mostrarVeiculoContainer(veiculoAtivoId);
+    });
+});
