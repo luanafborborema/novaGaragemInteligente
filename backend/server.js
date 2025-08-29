@@ -33,14 +33,13 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// ========= IMPORTANTE: SERVINDO ARQUIVOS ESTÁTICOS =========
-// Esta linha deve vir ANTES de todas as suas rotas de API.
-// Ela diz ao servidor: "Se alguém pedir um arquivo como /style.css ou /imagens/carro.png,
-// procure por ele dentro da pasta ../frontend e envie-o."
+// ========= ORDEM CORRETA PASSO 1: SERVIR ARQUIVOS ESTÁTICOS =========
+// Esta linha deve vir primeiro, para que o servidor encontre seu CSS, JS, e imagens.
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // ===========================================
-// Rotas da API (continuam iguais)
+// ========= ORDEM CORRETA PASSO 2: ROTAS DA API =========
+// Todas as suas rotas de API devem vir DEPOIS de servir os arquivos estáticos.
 // ===========================================
 
 app.post('/api/veiculos', async (req, res) => {
@@ -131,10 +130,9 @@ app.get('/api/garagem/ferramentas-essenciais/:id', (req, res) => {
 });
 
 // ===========================================
-// Rota Final - Serve o index.html (Pega-Tudo)
-// ===========================================
-// Se a requisição não for para um arquivo estático (CSS, JS, PNG) ou uma API,
-// o Render servirá a página principal do seu site.
+// ========= ORDEM CORRETA PASSO 3: Rota Final - Serve o index.html (Pega-Tudo) =========
+// Esta rota deve ser a ÚLTIMA DE TODAS. Se a requisição não for para um arquivo estático nem para uma API,
+// o servidor vai enviar a página principal do site, permitindo que o roteamento do seu frontend funcione.
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
