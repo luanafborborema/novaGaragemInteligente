@@ -1,17 +1,15 @@
 // script.js
-// Conteúdo COMPLETO e CORRIGIDO do arquivo JavaScript principal do frontend.
 
 import { Carro } from './Carro.js';
 import { CarroEsportivo } from './CarroEsportivo.js';
 import { Caminhao } from './Caminhao.js';
 import { Moto } from './Moto.js';
 import { Bicicleta } from './Bicicleta.js';
-import { Manutencao } from './Manutencao.js';
+// Não precisamos mais importar a classe Manutencao aqui no frontend.
 import { mostrarFeedback } from './funcoesAuxiliares.js';
 
-const backendLocalUrl = 'http://localhost:3001';
-const backendRenderUrl = ''; // Coloque aqui sua URL pública do Render quando tiver
-const backendUrl = backendLocalUrl;
+// Define a URL do backend. Mude para a URL do Render quando fizer o deploy.
+const backendUrl = 'http://localhost:3001'; 
 
 console.log(`[FRONTEND] O script será executado com o backend em: ${backendUrl}`);
 
@@ -36,40 +34,155 @@ let veiculoAtivoId = null;
 
 // Elementos DOM
 const mainContent = document.getElementById('main-content');
+const addVeiculoFormContainer = document.getElementById('add-veiculo-form-container');
 const editVeiculoFormContainer = document.getElementById('edit-veiculo-form-container');
-const editVeiculoForm = document.getElementById('edit-veiculo-form');
-const cancelEditVeiculoBtn = document.getElementById('cancel-edit-veiculo');
+const welcomeMessage = document.getElementById('welcome-message');
 
 // ===========================================================================
-// FUNÇÕES PRINCIPAIS DE GERENCIAMENTO
+// FUNÇÕES DE LÓGICA DE MANUTENÇÃO (NOVAS - USANDO API)
 // ===========================================================================
 
-/** Atualiza a UI com os dados do veículo selecionado. */
+/**
+ * Busca as manutenções de um veículo específico no backend.
+ * @param {string} veiculoId - O _id do veículo no MongoDB.
+ * @param {string} tipoVeiculoPrefix - O prefixo do tipo de veículo (ex: 'carro', 'moto').
+ */
+async function carregarManutencoes(veiculoId, tipoVeiculoPrefix) {
+    const historicoLista = document.getElementById(`${tipoVeiculoPrefix}-historico-lista`);
+    if (!historicoLista) return;
+    historicoLista.innerHTML = '<li>Carregando manutenções...</li>';
+
+    try {
+        const response = await fetch(`${backendUrl}/api/veiculos/${veiculoId}/manutencoes`);
+        if (!response.ok) {
+            throw new Error('Falha ao buscar as manutenções do veículo.');
+        }
+        const manutencoes = await response.json();
+        atualizarDisplayManutencaoUI(manutencoes, tipoVeiculoPrefix);
+    } catch (error) {
+        console.error(`Erro ao carregar manutenções para o veículo ${veiculoId}:`, error);
+        mostrarFeedback(error.message, 'error');
+        historicoLista.innerHTML = '<li>Erro ao carregar manutenções.</li>';
+    }
+}
+
+/**
+ * Atualiza a interface do usuário com a lista de manutenções.
+ * @param {Array} manutencoes - Um array de objetos de manutenção vindos do backend.
+ * @param {string} tipoVeiculoPrefix - O prefixo do tipo de veículo.
+ */
+function atualizarDisplayManutencaoUI(manutencoes, tipoVeiculoPrefix) {
+    const historicoLista = document.getElementById(`${tipoVeiculoPrefix}-historico-lista`);
+    if (!historicoLista) return;
+
+    historicoLista.innerHTML = ''; // Limpa a lista atual
+
+    if (manutencoes.length === 0) {
+        historicoLista.innerHTML = '<li>Nenhum registro de manutenção encontrado.</li>';
+        return;
+    }
+
+    manutencoes.forEach(manutencao => {
+        const li = document.createElement('li');
+        const dataFormatada = new Date(manutencao.data).toLocaleDateString('pt-BR');
+        const custoFormatado = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(manutencao.custo);
+        
+        li.textContent = `${manutencao.descricaoServico} em ${dataFormatada} - ${custoFormatado} (KM: ${manutencao.quilometragem || 'N/A'})`;
+        historicoLista.appendChild(li);
+    });
+}
+
+/**
+ * Lida com o envio do formulário de nova manutenção para o backend.
+ * @param {Event} event - O evento de submit do formulário.
+ */
+async function handleAdicionarManutencao(event) {
+    event.preventDefault();
+    const form = event.target;
+    const tipoVeiculo = form.dataset.tipo;
+    
+    const veiculo = veiculosInstanciados[veiculoAtivoId];
+    if (!veiculo || !veiculo._id) {
+        mostrarFeedback('Nenhum veículo ativo selecionado para adicionar manutenção.', 'error');
+        return;
+    }
+
+    // Coleta os dados do formulário
+    const dadosFormulario = {
+        descricaoServico: form.querySelector(`#${tipoVeiculo}-manutencao-tipo`).value,
+        data: form.querySelector(`#${tipoVeiculo}-manutencao-data`).value || new Date().toISOString(),
+        custo: parseFloat(form.querySelector(`#${tipoVeiculo}-manutencao-custo`).value),
+        quilometragem: parseInt(form.querySelector(`#${tipoVeiculo}-manutencao-descricao`).value, 10) || 0
+    };
+
+    if (!dadosFormulario.descricaoServico || isNaN(dadosFormulario.custo)) {
+        mostrarFeedback('Descrição do Serviço e Custo são campos obrigatórios.', 'warning');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${backendUrl}/api/veiculos/${veiculo._id}/manutencoes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dadosFormulario),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erro ao salvar manutenção.');
+        }
+
+        mostrarFeedback('Manutenção adicionada com sucesso!', 'success');
+        form.reset(); // Limpa o formulário
+        
+        // Recarrega a lista de manutenções para exibir a nova
+        await carregarManutencoes(veiculo._id, tipoVeiculo);
+
+    } catch (error) {
+        console.error('Erro ao adicionar manutenção:', error);
+        mostrarFeedback(error.message, 'error');
+    }
+}
+
+
+// ===========================================================================
+// FUNÇÕES PRINCIPAIS DE GERENCIAMENTO DE VEÍCULOS
+// ===========================================================================
+
+/** Atualiza a UI com os dados do veículo selecionado e carrega suas manutenções. */
 function mostrarVeiculoContainer(veiculoId) {
     const veiculo = veiculosInstanciados[veiculoId];
     if (!veiculo) return;
     
     veiculoAtivoId = veiculoId;
     
+    // Esconde todas as seções principais
     document.querySelectorAll('.veiculo-container').forEach(c => c.style.display = 'none');
-    document.getElementById('welcome-message').style.display = 'none';
-    document.getElementById('add-veiculo-form-container').style.display = 'none';
+    welcomeMessage.style.display = 'none';
+    addVeiculoFormContainer.style.display = 'none';
     editVeiculoFormContainer.style.display = 'none';
     
     const prefix = veiculo.getIdPrefix();
     const container = document.getElementById(`${prefix}-container`);
     if (container) {
         container.style.display = 'block';
+        
+        // Preenche dados básicos do veículo
         container.querySelector(`#${prefix}-modelo`).textContent = veiculo.modelo;
         container.querySelector(`#${prefix}-placa`).textContent = veiculo.placa || '---';
         container.querySelector(`#${prefix}-cor`).textContent = veiculo.cor;
+        container.querySelector(`#${prefix}-marca`).textContent = veiculo.marca;
+        container.querySelector(`#${prefix}-ano`).textContent = veiculo.ano;
 
+        // Atualiza status dinâmicos
         if (veiculo.atualizarStatus) veiculo.atualizarStatus();
         if (veiculo.atualizarVelocidade) veiculo.atualizarVelocidade();
-        if (veiculo.atualizarDisplayManutencao) veiculo.atualizarDisplayManutencao();
         if (veiculo.atualizarEstadoBotoesWrapper) veiculo.atualizarEstadoBotoesWrapper();
-        if (veiculo instanceof CarroEsportivo && veiculo.atualizarTurboDisplay) veiculo.atualizarTurboDisplay();
-        if (veiculo instanceof Caminhao && veiculo.atualizarInfoCaminhao) veiculo.atualizarInfoCaminhao();
+        if (veiculo instanceof CarroEsportivo) veiculo.atualizarTurboDisplay();
+        if (veiculo instanceof Caminhao) veiculo.atualizarInfoCaminhao();
+
+        // CHAMA A FUNÇÃO PARA CARREGAR AS MANUTENÇÕES DO BACKEND
+        carregarManutencoes(veiculo._id, prefix);
     }
 }
 
@@ -87,38 +200,29 @@ async function carregarGaragem() {
 
         veiculosDoBackend.forEach(dados => {
             const Classe = classesVeiculos[dados.tipo] || classesVeiculos.carro;
-            let instancia;
-            
-            if (dados.tipo === 'caminhao') {
-                instancia = new Classe(dados.modelo, dados.cor, dados.capacidadeCarga, dados._id, [], dados.cargaAtual);
-            } else if (dados.tipo === 'esportivo') {
-                instancia = new Classe(dados.modelo, dados.cor, dados._id, [], dados.turboAtivado);
-            } else {
-                instancia = new Classe(dados.modelo, dados.cor, dados._id);
-            }
+            // A lógica de manutenção foi removida daqui, pois será carregada sob demanda
+            let instancia = new Classe(dados.modelo, dados.cor, dados._id, []);
 
+            // Atribui propriedades do backend para a instância do frontend
             instancia._id = dados._id;
             instancia.placa = dados.placa;
             instancia.marca = dados.marca;
             instancia.ano = dados.ano;
 
-            // Adiciona ao mapa local
             veiculosInstanciados[instancia._id] = instancia;
 
             // Adiciona à sidebar
             const li = document.createElement('li');
             li.className = 'veiculo-item';
-            const displayTexto = instancia.placa && !instancia.placa.startsWith('BIKE-') 
-                               ? `${instancia.modelo} (${instancia.placa})`
-                               : `${instancia.modelo} (Bicicleta)`;
-            li.innerHTML = `<a href="#" data-veiculo-id="${instancia._id}">${displayTexto}</a>`;
-            document.getElementById('sidebar-menu').insertBefore(li, document.querySelector('li[data-action]'));
+            const displayTexto = dados.placa ? `${dados.modelo} (${dados.placa})` : dados.modelo;
+            li.innerHTML = `<a href="#" data-veiculo-id="${dados._id}">${displayTexto}</a>`;
+            document.getElementById('sidebar-menu').appendChild(li);
         });
 
-        if (Object.keys(veiculosInstanciados).length > 0) {
-            mostrarVeiculoContainer(Object.keys(veiculosInstanciados)[0]);
+        if (veiculosDoBackend.length > 0) {
+            mostrarVeiculoContainer(veiculosDoBackend[0]._id);
         } else {
-            document.getElementById('welcome-message').style.display = 'block';
+            welcomeMessage.style.display = 'block';
         }
 
     } catch (error) {
@@ -133,37 +237,22 @@ async function buscarPrevisaoTempo(cidade, tipoVeiculo) {
         mostrarFeedback('Por favor, digite o nome de uma cidade.', 'warning');
         return;
     }
-
     const resultadoDiv = document.getElementById(`previsao-tempo-resultado-${tipoVeiculo}`);
-    const nomeCidadeSpan = document.getElementById(`nome-cidade-previsao-${tipoVeiculo}`);
-    const botao = document.getElementById(`verificar-clima-btn-${tipoVeiculo}`);
-
     resultadoDiv.innerHTML = '<p>Buscando previsão...</p>';
-    botao.disabled = true;
 
     try {
-        const url = `${backendUrl}/api/previsao/${encodeURIComponent(cidade)}`;
-        const response = await fetch(url);
+        const response = await fetch(`${backendUrl}/api/previsao/${encodeURIComponent(cidade)}`);
         const data = await response.json();
 
-        if (!response.ok) {
-            throw new Error(data.error || 'Erro desconhecido ao buscar previsão.');
-        }
+        if (!response.ok) throw new Error(data.error || 'Erro desconhecido.');
 
-        nomeCidadeSpan.textContent = `${data.nomeCidade}, ${data.pais}`;
         resultadoDiv.innerHTML = `
-            <div class="previsao-atual-card">
-                <h5>${data.descricaoClima}</h5>
-                <img src="https://openweathermap.org/img/wn/${data.iconeClima}@2x.png" alt="${data.descricaoClima}">
-                <p>Temp: ${data.temperaturaAtual.toFixed(1)}°C</p>
-                <p>Sensação: ${data.sensacaoTermica.toFixed(1)}°C</p>
-            </div>`;
+            <h5>${data.descricaoClima}</h5>
+            <img src="https://openweathermap.org/img/wn/${data.iconeClima}@2x.png" alt="${data.descricaoClima}">
+            <p>Temperatura: ${data.temperaturaAtual.toFixed(1)}°C</p>`;
     } catch (error) {
-        console.error('Erro ao buscar previsão:', error);
         mostrarFeedback(error.message, 'error');
         resultadoDiv.innerHTML = `<p style="color:red;">Falha ao buscar previsão.</p>`;
-    } finally {
-        botao.disabled = false;
     }
 }
 
@@ -173,24 +262,16 @@ async function buscarPrevisaoTempo(cidade, tipoVeiculo) {
 document.addEventListener('DOMContentLoaded', () => {
     carregarGaragem();
     
-    // Event listener para toda a área de conteúdo principal
+    // Listener para ações nos veículos (botões de ligar, acelerar, etc.)
     mainContent.addEventListener('click', (e) => {
         const target = e.target;
+        const veiculo = veiculosInstanciados[veiculoAtivoId];
         
-        // Botão de Ver Previsão
         if (target.classList.contains('verificar-clima-btn-veiculo')) {
             const tipo = target.dataset.veiculoTipo;
             const cidadeInput = document.getElementById(`cidade-previsao-input-${tipo}`);
-            if (cidadeInput) {
-                buscarPrevisaoTempo(cidadeInput.value, tipo);
-            }
-        }
-
-        // Ações de POO dos veículos
-        if (target.dataset.acao) {
-            const veiculo = veiculosInstanciados[veiculoAtivoId];
-            if (!veiculo) return;
-
+            buscarPrevisaoTempo(cidadeInput.value, tipo);
+        } else if (target.dataset.acao && veiculo) {
             const acao = target.dataset.acao;
             if (typeof veiculo[acao] === 'function') {
                 veiculo[acao](window.sons);
@@ -198,49 +279,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Event listener para a sidebar
+    // Listener para o menu da sidebar
     document.getElementById('sidebar-menu').addEventListener('click', (e) => {
         const link = e.target.closest('a');
         if (!link) return;
-
         e.preventDefault();
 
         if (link.dataset.action === 'mostrarFormAddVeiculo') {
             document.querySelectorAll('.veiculo-container, #edit-veiculo-form-container').forEach(c => c.style.display = 'none');
-            document.getElementById('welcome-message').style.display = 'none';
-            document.getElementById('add-veiculo-form-container').style.display = 'block';
-            document.getElementById('add-veiculo-form').reset();
+            welcomeMessage.style.display = 'none';
+            addVeiculoFormContainer.style.display = 'block';
         } else if (link.dataset.veiculoId) {
             mostrarVeiculoContainer(link.dataset.veiculoId);
         }
     });
     
-    // Formulário de adicionar novo veículo
+    // Listener para o formulário de ADICIONAR veículo
     document.getElementById('add-veiculo-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        const tipo = formData.get('tipo');
-        let placa = formData.get('placa');
-
-        if (tipo !== 'bicicleta' && !placa) {
-            return mostrarFeedback('A placa é obrigatória para este tipo de veículo.', 'warning');
-        }
-
-        const dadosParaBackend = {
-            tipo: tipo,
-            modelo: formData.get('modelo'),
-            marca: formData.get('marca'),
-            ano: Number(formData.get('ano')),
-            cor: formData.get('cor'),
-            placa: (tipo === 'bicicleta') 
-                ? `BIKE-${Math.random().toString(36).substring(2, 9).toUpperCase()}` 
-                : placa.toUpperCase()
-        };
-
-        if (tipo === 'caminhao') {
-            dadosParaBackend.capacidadeCarga = Number(formData.get('capacidade')) || 0;
-            dadosParaBackend.cargaAtual = 0;
-        }
+        const dadosParaBackend = Object.fromEntries(formData.entries());
 
         try {
             const response = await fetch(`${backendUrl}/api/veiculos`, {
@@ -248,20 +306,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dadosParaBackend)
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Erro ao criar veículo.');
             }
-            
             const novoVeiculo = await response.json();
             mostrarFeedback(`"${novoVeiculo.modelo}" foi criado com sucesso!`, 'success');
             await carregarGaragem();
             mostrarVeiculoContainer(novoVeiculo._id);
-
         } catch (error) {
-            console.error('Erro ao adicionar veículo:', error);
             mostrarFeedback(error.message, 'error');
         }
+    });
+
+    // NOVO: Adiciona listener para TODOS os formulários de manutenção
+    document.querySelectorAll('.manutencao-form').forEach(form => {
+        form.addEventListener('submit', handleAdicionarManutencao);
     });
 });
