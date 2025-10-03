@@ -46,6 +46,12 @@ const VeiculoSchema = new mongoose.Schema({
     turboAtivado: {
         type: Boolean
     }
+    ,
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    }
 }, {
     timestamps: true // Adiciona campos createdAt e updatedAt automaticamente
 });
