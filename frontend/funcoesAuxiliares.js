@@ -6,15 +6,8 @@
  * @param {HTMLAudioElement} audioElement - O elemento <audio> HTML a ser tocado.
  * @param {number} [volume=0.5] - O volume do áudio, um número entre 0 e 1.
  */
-export function tocarSom(audioElement, volume = 0.5) {
-    if (audioElement && typeof audioElement.play === 'function') {
-        audioElement.volume = Math.max(0, Math.min(1, volume));
-        audioElement.currentTime = 0;
-        audioElement.play().catch(error => console.warn("Erro ao tentar tocar som:", error));
-    } else {
-        console.warn("Tentativa de tocar um elemento de som inválido:", audioElement);
-    }
-}
+// Som removido: função tocarSom agora é um no-op para evitar chamadas a elementos de áudio removidos.
+export function tocarSom() { /* som removido */ }
 
 // Variável global para armazenar o ID do timeout do feedback
 let feedbackTimeout;
@@ -40,6 +33,22 @@ export function mostrarFeedback(mensagem, tipo = 'info') {
         if (feedbackMessageDiv) feedbackMessageDiv.style.display = 'none';
     }, 5000);
 }
+
+// Centralized user-visible messages that can be reused across the frontend.
+export const MESSAGES = {
+    SESSION_EXPIRED: 'Sessão expirada, faça login novamente!',
+    SESSION_STARTED: 'Sessão iniciada corretamente!',
+    REQUIRED_NAME: 'Campos obrigatórios não preenchidos! (Nome)',
+    REQUIRED_EMAIL: 'Campos obrigatórios não preenchidos! (Email)',
+    REQUIRED_PASSWORD: 'Campos obrigatórios não preenchidos! (Senha)',
+    PASSWORDS_MISMATCH: 'As senhas não conferem. Por favor, confirme sua senha.',
+    INVALID_EMAIL_PROMPT: 'O email informado parece inválido. Deseja tentar registrar mesmo assim?',
+    INVALID_EMAIL_CANCELLED: 'Registro cancelado: Email inválido.',
+    PASSWORD_WEAK_CONFIRM: 'Senha muito fraca, escolha outra. Deseja prosseguir mesmo assim?',
+    REGISTER_CANCELLED_WEAK: 'Registro cancelado: Senha muito fraca.',
+    VERIFYING_DATA: 'Verificando dados, aguarde...',
+    ACCOUNT_CREATED_REDIRECTING: 'Conta criada, redirecionando...',
+};
 
 /**
  * Atualiza informações textuais de um veículo na interface do usuário.
@@ -112,13 +121,8 @@ export function animarVeiculo(idPrefix, acaoCss) {
     const imgId = `${idPrefix}-img`;
     const img = document.getElementById(imgId);
     if (img) {
+        // animações visuais removidas para simplificar a UI
         img.classList.remove('acelerando', 'freando');
-        if (acaoCss) {
-            img.classList.add(acaoCss);
-            setTimeout(() => {
-                img.classList.remove(acaoCss);
-            }, 300);
-        }
     }
 }
 
@@ -133,59 +137,15 @@ export function atualizarEstadoBotoes(veiculo) {
     const container = document.getElementById(`${prefix}-container`);
     if (!container) return;
 
-    const ligado = veiculo.ligado;
-    const parado = veiculo.velocidade === 0;
+    // Simplified: only keep Editar/Excluir enabled state; all other action buttons were removed.
     const botoes = container.querySelectorAll('.actions button[data-acao]');
-    const cargaInput = container.querySelector(`#caminhao-carga-input`);
-
     botoes.forEach(botao => {
         const acao = botao.dataset.acao;
-        let desabilitar = false;
-
-        switch (acao) {
-            case 'ligar':
-                desabilitar = prefix !== 'bicicleta' && ligado;
-                break;
-            case 'desligar':
-                desabilitar = prefix !== 'bicicleta' && (!ligado || !parado);
-                break;
-            case 'acelerar':
-            case 'pedalar':
-                desabilitar = prefix !== 'bicicleta' && !ligado;
-                break;
-            case 'frear':
-                desabilitar = parado;
-                break;
-            case 'ativarTurbo':
-                desabilitar = !ligado || (veiculo.turboAtivado === true);
-                break;
-            case 'desativarTurbo':
-                desabilitar = (veiculo.turboAtivado === false || veiculo.turboAtivado === undefined);
-                break;
-            case 'carregar':
-                desabilitar = !ligado;
-                if (cargaInput && (!cargaInput.value || parseFloat(cargaInput.value) <= 0)) {
-                    if (!desabilitar) desabilitar = true;
-                }
-                break;
-            case 'descarregar':
-                desabilitar = !ligado || veiculo.cargaAtual === 0;
-                if (cargaInput && (!cargaInput.value || parseFloat(cargaInput.value) <= 0)) {
-                    if (!(desabilitar) && veiculo.cargaAtual > 0) {
-                        // permite descarregar tudo
-                    } else if (!desabilitar) {
-                        desabilitar = true;
-                    }
-                }
-                break;
-            case 'buzinar':
-                desabilitar = false;
-                break;
+        if (acao === 'editar' || acao === 'excluir') {
+            botao.disabled = false;
+        } else {
+            // Shouldn't exist anymore in HTML, but defensively disable
+            botao.disabled = true;
         }
-        botao.disabled = desabilitar;
     });
-
-    if (cargaInput) {
-        cargaInput.disabled = !ligado;
-    }
 }

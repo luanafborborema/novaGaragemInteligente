@@ -1,8 +1,8 @@
-# Garagem Inteligente Unificada
+# GARAGEM DA LU
 
 ## Visão Geral do Projeto
 
-A "Garagem Inteligente Unificada" é uma aplicação web interativa construída com HTML, CSS e JavaScript, utilizando os princípios da Programação Orientada a Objetos (POO). O projeto simula o gerenciamento de uma garagem virtual, permitindo ao usuário adicionar, controlar e monitorar diferentes tipos de veículos (Carro Casual, Carro Esportivo, Caminhão, Moto e Bicicleta), além de gerenciar o histórico de manutenções.
+"GARAGEM DA LU" é uma aplicação web interativa construída com HTML, CSS e JavaScript, utilizando os princípios da Programação Orientada a Objetos (POO). O projeto simula o gerenciamento de uma garagem virtual, permitindo ao usuário adicionar, controlar e monitorar diferentes tipos de veículos (Carro Casual, Carro Esportivo, Caminhão, Moto e Bicicleta), além de gerenciar o histórico de manutenções.
 
 O backend em Node.js/Express serve como o cérebro da aplicação, conectando-se a um banco de dados MongoDB Atlas para **persistência de dados** e fornecendo diversas APIs (Application Programming Interfaces) para o frontend consumir.
 
@@ -86,6 +86,26 @@ Neste projeto, a `OPENWEATHER_API_KEY` e a `MONGO_URI_CRUD` são gerenciadas com
 
 *   **Localmente**: Armazenadas no arquivo `backend/.env` (que é ignorado pelo Git através do `.gitignore`).
 *   **No Deploy (Render)**: Configuras como variáveis de ambiente no painel do serviço no Render.com, protegendo suas credenciais.
+
+## Autenticação (adicionado)
+
+O backend agora expõe endpoints para registro e login de usuários. A aplicação utiliza JSON Web Tokens (JWT) para proteger as rotas de veículos.
+
+- POST /api/auth/register
+    - Body: { email, password }
+    - Retorna 201 com mensagem de sucesso. Cria um novo usuário com a senha criptografada.
+
+- POST /api/auth/login
+    - Body: { email, password }
+    - Retorna 200 com { token } se as credenciais estiverem corretas.
+
+Como o frontend utiliza esses endpoints:
+
+- Ao fazer login, o token JWT retornado é salvo em localStorage como `token`.
+- Todas as chamadas a /api/veiculos usam o cabeçalho Authorization: Bearer <token> (quando presente).
+- Logout remove o token de localStorage e limpa a UI.
+
+Se estiver rodando localmente, verifique se as variáveis de ambiente do backend estão configuradas (MONGO_URI_CRUD e opcionalmente JWT_SECRET).
 
 ## Deploy da Aplicação (Versão Pública na Nuvem)
 

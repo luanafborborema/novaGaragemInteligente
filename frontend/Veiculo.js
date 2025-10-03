@@ -10,7 +10,6 @@ import { Manutencao } from './Manutencao.js';
  * @class Veiculo
  * @abstract
  * @classdesc Classe abstrata que serve como base para todos os tipos de veículos (Carro, Moto, Bicicleta, etc.).
- * Não deve ser instanciada diretamente. Define funcionalidades e atributos comuns a todos os veículos.
  */
 export class Veiculo {
     /**
@@ -100,15 +99,8 @@ export class Veiculo {
      * @param {object} sons - O objeto contendo os elementos de áudio (`window.sons`).
      */
     ligar(sons) {
-        if (this.ligado) {
-            mostrarFeedback(`${this.modelo} já está ligado!`, 'warning');
-        } else {
-            this.ligado = true;
-            if (sons && sons.ligar) tocarSom(sons.ligar, 0.4); // Toca o som de ligar (se disponível)
-            this.atualizarStatus(); // Atualiza o status visual (ex: de "Desligado" para "Ligado")
-            this.atualizarEstadoBotoesWrapper(); // Reabilita botões como 'acelerar'
-            mostrarFeedback(`${this.modelo} foi ligado.`, 'success');
-        }
+        // Função de ligar removida por solicitação: não altera estado nem toca som.
+        mostrarFeedback('Ação de ligar foi removida desta versão.', 'info');
     }
 
     /**
@@ -118,21 +110,8 @@ export class Veiculo {
      * @param {object} sons - O objeto contendo os elementos de áudio (`window.sons`).
      */
     desligar(sons) {
-        if (!this.ligado) {
-            mostrarFeedback(`${this.modelo} já está desligado.`, 'warning');
-            return;
-        }
-        if (this.velocidade > 0) {
-            mostrarFeedback(`${this.modelo} precisa parar completamente para desligar!`, 'warning');
-            return;
-        }
-        this.ligado = false;
-        this.velocidade = 0; // Garante que a velocidade esteja zerada ao desligar
-        if (sons && sons.desligar) tocarSom(sons.desligar, 0.3); // Toca som de desligar (se disponível)
-        this.atualizarStatus(); // Atualiza o status visual
-        this.atualizarVelocidade(); // Garante que a velocidade exibida seja 0
-        this.atualizarEstadoBotoesWrapper(); // Desabilita botões de movimento
-        mostrarFeedback(`${this.modelo} foi desligado.`, 'info');
+        // Função de desligar removida por solicitação: não altera estado nem toca som.
+        mostrarFeedback('Ação de desligar foi removida desta versão.', 'info');
     }
 
     /**
@@ -166,13 +145,13 @@ export class Veiculo {
     // Exibem um warning se chamados diretamente na classe Veiculo.
     /** @abstract @param {object} sons - O objeto contendo os elementos de áudio. */
     acelerar(sons) { 
-        console.warn(`[Veiculo] O método 'acelerar()' não está implementado na subclasse ${this.constructor.name}.`); 
-        mostrarFeedback("Ação de acelerar não configurada para este veículo.", 'warning');
+        // Acelerar removido: mantém compatibilidade com chamadas, mas não realiza ação.
+        mostrarFeedback('Ação de acelerar foi removida desta versão.', 'info');
     }
     /** @abstract @param {object} sons - O objeto contendo os elementos de áudio. */
     frear(sons) { 
-        console.warn(`[Veiculo] O método 'frear()' não está implementado na subclasse ${this.constructor.name}.`); 
-        mostrarFeedback("Ação de frear não configurada para este veículo.", 'warning');
+        // Frear removido: mantém compatibilidade com chamadas, mas não realiza ação.
+        mostrarFeedback('Ação de frear foi removida desta versão.', 'info');
     }
 
     /**
@@ -194,13 +173,8 @@ export class Veiculo {
       * @param {object} sons - O objeto contendo os elementos de áudio (`window.sons`).
       */
     buzinar(sons) {
-        if (sons && sons.buzina) {
-             tocarSom(sons.buzina, 0.5); // Toca o som de buzina padrão com volume 0.5
-             console.log(`${this.modelo} buzinou!`);
-        } else {
-            console.warn("[Veiculo] Som de buzina padrão não encontrado!");
-        }
-        mostrarFeedback(`${this.modelo} buzinou!`, 'info');
+        // Buzinar removido: apenas informa que a função não está disponível
+        mostrarFeedback('Ação de buzinar removida desta versão.', 'info');
     }
 
     /**
