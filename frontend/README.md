@@ -1,3 +1,39 @@
+## Garagem Social e Compartilhamento de Veículos
+
+### Compartilhar Veículo com Outro Usuário
+
+**Endpoint:** `POST /api/veiculos/:veiculoId/share`
+
+- Compartilha um veículo com outro usuário pelo email.
+- Apenas o dono do veículo pode compartilhar.
+- Exemplo de requisição:
+
+```
+POST /api/veiculos/ID_DO_VEICULO/share
+Body: { "email": "usuario@exemplo.com" }
+Headers: Authorization: Bearer <token>
+```
+
+**Respostas:**
+- 200: `{ success: true, message: "Veículo compartilhado com usuario@exemplo.com" }`
+- 403: Se não for o dono.
+- 404: Se veículo ou usuário não existir.
+- 409: Se já estiver compartilhado.
+
+### Listagem de Veículos Próprios e Compartilhados
+
+- O endpoint `GET /api/veiculos` retorna:
+    - Veículos do usuário logado **e** veículos compartilhados com ele.
+- No frontend, veículos compartilhados exibem “(Compartilhado por [email])” ao lado do nome.
+
+---
+
+## Notas de Correção de Bugs
+
+- Corrigido bug na exclusão de veículos:
+    - Agora, ao excluir um veículo, o frontend só faz logout se realmente houver erro de autenticação (401/403).
+    - Mensagem de sucesso é exibida e a lista é atualizada imediatamente.
+    - Não há mais logout indevido após exclusão.
 # GARAGEM DA LU
 
 ## Visão Geral do Projeto
